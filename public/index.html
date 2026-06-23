@@ -233,16 +233,33 @@
             <button type="submit" class="btn-primary">Add Product</button>
         </form>
 
-        <div class="controls">
-            <span style="color: var(--text-secondary); font-size: 0.9rem;">Filter by:</span>
-            <select id="categoryFilter" class="input-field">
-                <option value="">All Categories</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Books">Books</option>
-                <option value="Home">Home</option>
-                <option value="Toys">Toys</option>
-                <option value="Clothing">Clothing</option>
-            </select>
+        <div class="controls" style="width: 100%; max-width: 1000px; justify-content: space-between;">
+            <button id="simulateBtn" class="btn-primary" style="background-color: #10b981;">Simulate 50 Inserts</button>
+            
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; align-items: center;">
+                <!-- Independent Search Form -->
+                <form id="searchForm" style="display: flex; gap: 0.5rem; margin: 0;">
+                    <input type="text" id="searchFilter" class="input-field" placeholder="Search names..." style="width: 180px;">
+                    <button type="submit" class="btn-primary">Search</button>
+                </form>
+
+                <div style="width: 1px; height: 2rem; background-color: var(--surface-border); margin: 0 0.5rem;"></div>
+
+                <!-- Independent Filter Form -->
+                <form id="filterForm" style="display: flex; gap: 0.5rem; margin: 0;">
+                    <select id="categoryFilter" class="input-field">
+                        <option value="">All Categories</option>
+                        <option value="Electronics">Electronics</option>
+                        <option value="Books">Books</option>
+                        <option value="Home">Home</option>
+                        <option value="Toys">Toys</option>
+                        <option value="Clothing">Clothing</option>
+                    </select>
+                    <input type="number" id="minPrice" class="input-field" placeholder="Min ₹" style="width: 80px;">
+                    <input type="number" id="maxPrice" class="input-field" placeholder="Max ₹" style="width: 80px;">
+                    <button type="submit" class="btn-primary" style="background-color: var(--text-primary);">Filter</button>
+                </form>
+            </div>
         </div>
     </header>
 
@@ -264,8 +281,14 @@
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
         const pageIndicator = document.getElementById('pageIndicator');
+        const searchForm = document.getElementById('searchForm');
+        const filterForm = document.getElementById('filterForm');
+        const searchFilter = document.getElementById('searchFilter');
         const categoryFilter = document.getElementById('categoryFilter');
+        const minPriceFilter = document.getElementById('minPrice');
+        const maxPriceFilter = document.getElementById('maxPrice');
         const addProductForm = document.getElementById('addProductForm');
+        const simulateBtn = document.getElementById('simulateBtn');
 
         let cursorHistory = [null]; // Stores cursors for pages. Index 0 is Page 1 (null cursor).
         let currentPageIndex = 0;
@@ -287,9 +310,16 @@
             isLoading = true;
             grid.innerHTML = ''; // Clear for new page
 
+            const search = searchFilter.value;
             const category = categoryFilter.value;
+            const minPrice = minPriceFilter.value;
+            const maxPrice = maxPriceFilter.value;
+
             let url = `${API_BASE}/api/products?limit=12`;
+            if (search) url += `&search=${encodeURIComponent(search)}`;
             if (category) url += `&category=${encodeURIComponent(category)}`;
+            if (minPrice) url += `&minPrice=${encodeURIComponent(minPrice)}`;
+            if (maxPrice) url += `&maxPrice=${encodeURIComponent(maxPrice)}`;
 
             const cursor = cursorHistory[currentPageIndex];
             if (cursor) url += `&cursor=${encodeURIComponent(cursor)}`;
@@ -353,6 +383,24 @@
             }
         });
 
+        simulateBtn.addEventListener('click', async () => {
+            simulateBtn.disabled = true;
+            simulateBtn.innerText = "Simulating...";
+            try {
+                const res = await fetch(`${API_BASE}/api/products/simulate`, { method: 'POST' });
+                if (res.ok) {
+                    alert("✅ 50 random items added to the top of the database!\n\nTry clicking 'Next →' to verify your current pagination isn't broken. (If this was OFFSET pagination, you would see duplicates!)");
+                } else {
+                    alert("Failed to simulate.");
+                }
+            } catch (err) {
+                alert("Error connecting to backend.");
+            } finally {
+                simulateBtn.disabled = false;
+                simulateBtn.innerText = "Simulate 50 Inserts";
+            }
+        });
+
         prevBtn.addEventListener('click', () => {
             if (currentPageIndex > 0) {
                 currentPageIndex--;
@@ -367,7 +415,23 @@
             }
         });
 
-        categoryFilter.addEventListener('change', () => {
+        searchForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Clear filters so search works independently
+            categoryFilter.value = '';
+            minPriceFilter.value = '';
+            maxPriceFilter.value = '';
+            
+            cursorHistory = [null];
+            currentPageIndex = 0;
+            fetchProducts();
+        });
+
+        filterForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // Clear search so filter works independently
+            searchFilter.value = '';
+            
             cursorHistory = [null];
             currentPageIndex = 0;
             fetchProducts();

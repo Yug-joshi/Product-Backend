@@ -30,16 +30,36 @@ function decodeCursor(cursor) {
 app.get('/api/products', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit, 10) || 20;
-    const { category, cursor } = req.query;
+    const { category, cursor, search, minPrice, maxPrice } = req.query;
 
     let queryText = 'SELECT id, name, category, price, created_at, updated_at FROM products WHERE 1=1';
     let queryParams = [];
     let paramIndex = 1;
 
-    // Apply category filter if provided
+    // Apply filters if provided
     if (category) {
       queryText += ` AND category = $${paramIndex++}`;
       queryParams.push(category);
+    }
+
+    if (search) {
+      const words = search.trim().split(/\s+/);
+      words.forEach(word => {
+        if (word) {
+          queryText += ` AND name ILIKE $${paramIndex++}`;
+          queryParams.push(`%${word}%`);
+        }
+      });
+    }
+
+    if (minPrice) {
+      queryText += ` AND price >= $${paramIndex++}`;
+      queryParams.push(minPrice);
+    }
+
+    if (maxPrice) {
+      queryText += ` AND price <= $${paramIndex++}`;
+      queryParams.push(maxPrice);
     }
 
     // Apply cursor filter if provided
@@ -93,6 +113,52 @@ app.post('/api/products', async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error('Database insert error', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/products/simulate', async (req, res) => {
+  try {
+    const CATEGORIES = ['Electronics', 'Clothing', 'Books', 'Home', 'Toys'];
+    const BRANDS = ['Apex', 'Nova', 'Vertex', 'Lumina', 'Zenith', 'Quantum', 'Echo', 'Nimbus', 'Aura', 'Titan'];
+    const ADJECTIVES = ['Wireless', 'Smart', 'Ergonomic', 'Portable', 'Compact', 'Premium', 'Pro', 'Ultra'];
+    const NOUNS = {
+      'Electronics': ['Headphones', 'Speaker', 'Monitor', 'Keyboard', 'Mouse'],
+      'Clothing': ['T-Shirt', 'Jacket', 'Jeans', 'Sneakers', 'Sweater'],
+      'Books': ['Novel', 'Guide', 'Textbook', 'Cookbook', 'Biography'],
+      'Home': ['Lamp', 'Chair', 'Desk', 'Vase', 'Cushion'],
+      'Toys': ['Action Figure', 'Puzzle', 'Board Game', 'Plushie', 'Doll']
+    };
+
+    const values = [];
+    let placeholders = [];
+    
+    // We simulate them being created RIGHT NOW to put them at the top of the list.
+    const now = new Date().toISOString();
+
+    for (let i = 0; i < 50; i++) {
+      const category = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+      const brand = BRANDS[Math.floor(Math.random() * BRANDS.length)];
+      const adjective = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+      const noun = NOUNS[category][Math.floor(Math.random() * NOUNS[category].length)];
+      const name = `${brand} ${adjective} ${noun}`;
+      const price = (Math.random() * 495 + 5).toFixed(2);
+      
+      values.push(name, category, price, now, now);
+      
+      const offset = i * 5;
+      placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`);
+    }
+
+    const query = `
+      INSERT INTO products (name, category, price, created_at, updated_at)
+      VALUES ${placeholders.join(', ')}
+    `;
+
+    await pool.query(query, values);
+    res.status(201).json({ message: "50 products added successfully" });
+  } catch (err) {
+    console.error('Simulation insert error', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
