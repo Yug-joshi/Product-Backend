@@ -217,7 +217,7 @@
     <header>
         <h1>Store Inventory</h1>
 
-        <!-- ADD PRODUCT FORM -->
+
         <form class="add-product-form" id="addProductForm">
             <input type="text" id="addName" class="input-field" placeholder="Product Name" required>
             <select id="addCategory" class="input-field" required>
@@ -237,7 +237,7 @@
             <button id="simulateBtn" class="btn-primary" style="background-color: #10b981;">Simulate 50 Inserts</button>
 
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; align-items: center;">
-                <!-- Independent Search Form -->
+
                 <form id="searchForm" style="display: flex; gap: 0.5rem; margin: 0;">
                     <input type="text" id="searchFilter" class="input-field" placeholder="Search names..."
                         style="width: 180px;">
@@ -246,7 +246,7 @@
 
                 <div style="width: 1px; height: 2rem; background-color: var(--surface-border); margin: 0 0.5rem;"></div>
 
-                <!-- Independent Filter Form -->
+
                 <form id="filterForm" style="display: flex; gap: 0.5rem; margin: 0;">
                     <select id="categoryFilter" class="input-field">
                         <option value="">All Categories</option>
@@ -276,7 +276,7 @@
     </main>
 
     <script>
-        // Set the API base URL to your deployed Render backend
+
         const API_BASE = 'https://product-backend-hgu2.onrender.com';
 
         const grid = document.getElementById('productGrid');
@@ -292,25 +292,16 @@
         const addProductForm = document.getElementById('addProductForm');
         const simulateBtn = document.getElementById('simulateBtn');
 
-        let cursorHistory = [null]; // Stores cursors for pages. Index 0 is Page 1 (null cursor).
+        let cursorHistory = [null];
         let currentPageIndex = 0;
         let isLoading = false;
 
-        function createProductCard(product) {
-            const el = document.createElement('div');
-            el.className = 'card';
-            el.innerHTML = `
-                <div class="card-category">${product.category}</div>
-                <div class="card-title">${product.name}</div>
-                <div class="card-price">₹${Number(product.price).toFixed(2)}</div>
-            `;
-            return el;
-        }
+        const createProductCard = (p) => { const el = document.createElement('div'); el.className = 'card'; el.innerHTML = `<div class="card-category">${p.category}</div><div class="card-title">${p.name}</div><div class="card-price">₹${Number(p.price).toFixed(2)}</div>`; return el; };
 
         async function fetchProducts() {
             if (isLoading) return;
             isLoading = true;
-            grid.innerHTML = ''; // Clear for new page
+            grid.innerHTML = '';
 
             const search = searchFilter.value;
             const category = categoryFilter.value;
@@ -339,12 +330,12 @@
                     grid.appendChild(createProductCard(product));
                 });
 
-                // If this is the last page we've fetched so far, save the next cursor
+
                 if (currentPageIndex === cursorHistory.length - 1) {
                     cursorHistory.push(data.nextCursor);
                 }
 
-                // Update UI
+
                 pageIndicator.innerText = `Page ${currentPageIndex + 1}`;
                 prevBtn.disabled = currentPageIndex === 0;
                 nextBtn.disabled = !data.nextCursor;
@@ -373,10 +364,7 @@
                 if (res.ok) {
                     alert('Product added successfully!');
                     addProductForm.reset();
-                    // Reset pagination
-                    cursorHistory = [null];
-                    currentPageIndex = 0;
-                    fetchProducts();
+                    resetAndFetch();
                 } else {
                     alert('Failed to add product.');
                 }
@@ -417,29 +405,21 @@
             }
         });
 
+        const resetAndFetch = () => { cursorHistory = [null]; currentPageIndex = 0; fetchProducts(); };
+
         searchForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            // Clear filters so search works independently
-            categoryFilter.value = '';
-            minPriceFilter.value = '';
-            maxPriceFilter.value = '';
-
-            cursorHistory = [null];
-            currentPageIndex = 0;
-            fetchProducts();
+            categoryFilter.value = ''; minPriceFilter.value = ''; maxPriceFilter.value = '';
+            resetAndFetch();
         });
 
         filterForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            // Clear search so filter works independently
             searchFilter.value = '';
-
-            cursorHistory = [null];
-            currentPageIndex = 0;
-            fetchProducts();
+            resetAndFetch();
         });
 
-        // Initial Load
+
         fetchProducts();
     </script>
 </body>

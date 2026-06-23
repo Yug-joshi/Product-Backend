@@ -10,22 +10,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('public'));
 
-// Helper to encode cursor
-function encodeCursor(createdAt, id) {
-  const str = `${new Date(createdAt).toISOString()}|${id}`;
-  return Buffer.from(str).toString('base64');
-}
 
-// Helper to decode cursor
-function decodeCursor(cursor) {
-  try {
-    const str = Buffer.from(cursor, 'base64').toString('ascii');
-    const [createdAtStr, idStr] = str.split('|');
-    return { createdAt: createdAtStr, id: parseInt(idStr, 10) };
-  } catch (e) {
-    return null;
-  }
-}
+const encodeCursor = (c, id) => Buffer.from(`${new Date(c).toISOString()}|${id}`).toString('base64');
+const decodeCursor = (c) => { try { const [t, id] = Buffer.from(c, 'base64').toString('ascii').split('|'); return { createdAt: t, id: parseInt(id, 10) }; } catch { return null; } };
 
 app.get('/api/products', async (req, res) => {
   try {
@@ -36,7 +23,7 @@ app.get('/api/products', async (req, res) => {
     let queryParams = [];
     let paramIndex = 1;
 
-    // Apply filters if provided
+
     if (category) {
       queryText += ` AND category = $${paramIndex++}`;
       queryParams.push(category);
@@ -62,7 +49,7 @@ app.get('/api/products', async (req, res) => {
       queryParams.push(maxPrice);
     }
 
-    // Apply cursor filter if provided
+
     if (cursor) {
       const decoded = decodeCursor(cursor);
       if (!decoded) {
@@ -77,7 +64,7 @@ app.get('/api/products', async (req, res) => {
       paramIndex += 2;
     }
 
-    // Order by date descending, then ID descending
+
     queryText += ` ORDER BY created_at DESC, id DESC LIMIT $${paramIndex}`;
     queryParams.push(limit);
 
@@ -132,7 +119,7 @@ app.post('/api/products/simulate', async (req, res) => {
 
     const values = [];
     let placeholders = [];
-    
+
     // We simulate them being created RIGHT NOW to put them at the top of the list.
     const now = new Date().toISOString();
 
@@ -143,9 +130,9 @@ app.post('/api/products/simulate', async (req, res) => {
       const noun = NOUNS[category][Math.floor(Math.random() * NOUNS[category].length)];
       const name = `${brand} ${adjective} ${noun}`;
       const price = (Math.random() * 495 + 5).toFixed(2);
-      
+
       values.push(name, category, price, now, now);
-      
+
       const offset = i * 5;
       placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`);
     }
