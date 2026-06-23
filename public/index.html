@@ -235,11 +235,12 @@
 
         <div class="controls" style="width: 100%; max-width: 1000px; justify-content: space-between;">
             <button id="simulateBtn" class="btn-primary" style="background-color: #10b981;">Simulate 50 Inserts</button>
-            
+
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; align-items: center;">
                 <!-- Independent Search Form -->
                 <form id="searchForm" style="display: flex; gap: 0.5rem; margin: 0;">
-                    <input type="text" id="searchFilter" class="input-field" placeholder="Search names..." style="width: 180px;">
+                    <input type="text" id="searchFilter" class="input-field" placeholder="Search names..."
+                        style="width: 180px;">
                     <button type="submit" class="btn-primary">Search</button>
                 </form>
 
@@ -257,7 +258,8 @@
                     </select>
                     <input type="number" id="minPrice" class="input-field" placeholder="Min ₹" style="width: 80px;">
                     <input type="number" id="maxPrice" class="input-field" placeholder="Max ₹" style="width: 80px;">
-                    <button type="submit" class="btn-primary" style="background-color: var(--text-primary);">Filter</button>
+                    <button type="submit" class="btn-primary"
+                        style="background-color: var(--text-primary);">Filter</button>
                 </form>
             </div>
         </div>
@@ -275,7 +277,7 @@
 
     <script>
         // Force the API base URL to 127.0.0.1:3000 just in case the user opens index.html locally.
-        const API_BASE = window.location.protocol === 'file:' ? 'http://127.0.0.1:3000' : '';
+        const API_BASE = window.location.protocol === 'file:' ? 'https://product-backend-hgu2.onrender.com' : '';
 
         const grid = document.getElementById('productGrid');
         const prevBtn = document.getElementById('prevBtn');
@@ -421,7 +423,7 @@
             categoryFilter.value = '';
             minPriceFilter.value = '';
             maxPriceFilter.value = '';
-            
+
             cursorHistory = [null];
             currentPageIndex = 0;
             fetchProducts();
@@ -431,7 +433,7 @@
             e.preventDefault();
             // Clear search so filter works independently
             searchFilter.value = '';
-            
+
             cursorHistory = [null];
             currentPageIndex = 0;
             fetchProducts();
